@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 # RaspberryPi Pico RP2040 Mechanical Keyboard (single-key macro pad)
 
+import time
+
 import board
 import keypad
 import usb_hid
@@ -32,22 +34,22 @@ key = keypad.Keys((board.GP0,), value_when_pressed=False, pull=True)
 
 while True:
     event = key.events.get()
-    if event is None:
-        continue
+    if event is not None:
+        led.value = event.pressed
 
-    led.value = event.pressed
-
-    if event.pressed:
-        try:
-            if ACTION_TYPE == KEY:
-                kbd.press(ACTION_CODE)
-            else:
-                cc.send(ACTION_CODE)
-        except ValueError as e:  # six-key rollover limit
-            print("HID report full:", e)
-    else:
-        if ACTION_TYPE == KEY:
+        if event.pressed:
             try:
-                kbd.release(ACTION_CODE)
-            except ValueError as e:
-                print("release failed:", e)
+                if ACTION_TYPE == KEY:
+                    kbd.press(ACTION_CODE)
+                else:
+                    cc.send(ACTION_CODE)
+            except ValueError as e:  # six-key rollover limit
+                print("HID report full:", e)
+        else:
+            if ACTION_TYPE == KEY:
+                try:
+                    kbd.release(ACTION_CODE)
+                except ValueError as e:
+                    print("release failed:", e)
+
+    time.sleep(0.01)
