@@ -1,65 +1,54 @@
 # SPDX-FileCopyrightText: 2021 John Park for Adafruit Industries
 # SPDX-License-Identifier: MIT
-# RaspberryPi Pico RP2040 Mechanical Keyboard
-
-import time
+# RaspberryPi Pico RP2040 Mechanical Keyboard (single-key macro pad)
 
 import board
+import keypad
 import usb_hid
 from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
-from digitalio import DigitalInOut, Direction, Pull
+from digitalio import DigitalInOut, Direction
 
 print("---Pico Pad Keyboard---")
 
 led = DigitalInOut(board.LED)
 led.direction = Direction.OUTPUT
-led.value = True
+led.value = False  # lights up while the key is held, for press feedback
 
 kbd = Keyboard(usb_hid.devices)
 cc = ConsumerControl(usb_hid.devices)
 
-# list of pins to use (skipping GP15 on Pico because it's funky)
-pins = (board.GP0,)
+KEY = 1
+MEDIA = 2
 
-MEDIA = 1
-KEY = 2
+# What the single key does. Swap ACTION_TYPE/ACTION_CODE to change it,
+# e.g. ACTION_TYPE = MEDIA; ACTION_CODE = ConsumerControlCode.MUTE
+ACTION_TYPE = KEY
+ACTION_CODE = Keycode.C
 
-keymap = {
-    (0): (KEY, [Keycode.C]),
-}
-
-switches = []
-for i in range(len(pins)):
-    switch = DigitalInOut(pins[i])
-    switch.direction = Direction.INPUT
-    switch.pull = Pull.UP
-    switches.append(switch)
-
-switch_state = [0 for _ in range(len(switches))]
+# GP15 is skipped on the Pico because it's funky; the switch lives on GP0.
+key = keypad.Keys((board.GP0,), value_when_pressed=False, pull=True)
 
 while True:
-    for button in range(len(switches)):
-        if switch_state[button] == 0:
-            if not switches[button].value:
-                try:
-                    if keymap[button][0] == KEY:
-                        kbd.press(*keymap[button][1])
-                    else:
-                        cc.send(keymap[button][1])
-                except ValueError:  # deals w six key limit
-                    pass
-                switch_state[button] = 1
+    event = key.events.get()
+    if event is None:
+        continue
 
-        if switch_state[button] == 1:
-            if switches[button].value:
-                try:
-                    if keymap[button][0] == KEY:
-                        kbd.release(*keymap[button][1])
-                except ValueError:
-                    pass
-                switch_state[button] = 0
+    led.value = event.pressed
 
-    time.sleep(0.01)  # debounce
+    if event.pressed:
+        try:
+            if ACTION_TYPE == KEY:
+                kbd.press(ACTION_CODE)
+            else:
+                cc.send(ACTION_CODE)
+        except ValueError as e:  # six-key rollover limit
+            print("HID report full:", e)
+    else:
+        if ACTION_TYPE == KEY:
+            try:
+                kbd.release(ACTION_CODE)
+            except ValueError as e:
+                print("release failed:", e)
