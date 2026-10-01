@@ -26,8 +26,10 @@ MEDIA = 2
 
 # What the single key does. Swap ACTION_TYPE/ACTION_CODE to change it,
 # e.g. ACTION_TYPE = MEDIA; ACTION_CODE = ConsumerControlCode.MUTE
+# F13 is a key nobody types, so photobooth2 can tell this buzzer apart from a
+# real keyboard's `c` and from the Bluetooth buzzer (F14).
 ACTION_TYPE = KEY
-ACTION_CODE = Keycode.C
+ACTION_CODE = Keycode.F13
 
 # GP15 is skipped on the Pico because it's funky; the switch lives on GP0.
 key = keypad.Keys((board.GP0,), value_when_pressed=False, pull=True)

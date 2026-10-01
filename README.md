@@ -1,6 +1,8 @@
 # rp2040-keyboard
 
-A USB HID keyboard sending the key 'c' when GPIO 0 is pulled down.
+A USB HID keyboard sending the key F13 when GPIO 0 is pulled down.
+
+photobooth2 maps F13 to a capture and records it as coming from this buzzer. The Bluetooth buzzer ([photobooth-buzzer](https://github.com/johker01/photobooth-buzzer)) sends F14, and `c` stays the operator's keyboard key.
 
 ## Prerequisites
 * [CircuitPython](https://circuitpython.org/) installed on the RP2040
